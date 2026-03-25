@@ -153,6 +153,7 @@ export default function SignUpScreen({ onBack }: Props) {
   const { settings } = useTeam();
   const { addProfile } = useMemberProfiles();
 
+  const [role, setRole] = useState<'member' | 'coach'>('member');
   const [name, setName] = useState('');
   const [furigana, setFurigana] = useState('');
   const [birthDate, setBirthDate] = useState('');
@@ -190,7 +191,7 @@ export default function SignUpScreen({ onBack }: Props) {
       cohort: cohort.trim(),
       email: email.trim().toLowerCase(),
     });
-    signUp(name.trim(), email.trim().toLowerCase());
+    signUp(name.trim(), email.trim().toLowerCase(), role);
   };
 
   return (
@@ -206,7 +207,32 @@ export default function SignUpScreen({ onBack }: Props) {
 
         <ScrollView contentContainerStyle={styles.content}>
 
+          {/* 役割選択 */}
           <View style={[styles.sectionHeader, { borderLeftColor: settings.primaryColor }]}>
+            <Text style={styles.sectionTitle}>登録する役割</Text>
+          </View>
+          <View style={styles.roleRow}>
+            <TouchableOpacity
+              style={[
+                styles.roleBtn,
+                role === 'member' && { backgroundColor: settings.primaryColor, borderColor: settings.primaryColor },
+              ]}
+              onPress={() => setRole('member')}>
+              <Text style={[styles.roleBtnText, role === 'member' && { color: '#fff' }]}>会員</Text>
+              <Text style={[styles.roleBtnSub, role === 'member' && { color: 'rgba(255,255,255,0.75)' }]}>スケジュール・月謝管理</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.roleBtn,
+                role === 'coach' && { backgroundColor: settings.primaryColor, borderColor: settings.primaryColor },
+              ]}
+              onPress={() => setRole('coach')}>
+              <Text style={[styles.roleBtnText, role === 'coach' && { color: '#fff' }]}>指導者</Text>
+              <Text style={[styles.roleBtnSub, role === 'coach' && { color: 'rgba(255,255,255,0.75)' }]}>スケジュール管理・経費精算</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={[styles.sectionHeader, { borderLeftColor: settings.primaryColor, marginTop: 8 }]}>
             <Text style={styles.sectionTitle}>入会者情報</Text>
           </View>
 
@@ -345,6 +371,14 @@ const styles = StyleSheet.create({
   },
   submitBtnText: { color: '#FFFFFF', fontSize: 14, fontWeight: '800', letterSpacing: 1 },
   note: { color: TEXT2, fontSize: 12, textAlign: 'center', marginTop: 14, lineHeight: 18 },
+  roleRow: { flexDirection: 'row', gap: 10 },
+  roleBtn: {
+    flex: 1, borderWidth: 1.5, borderColor: BORDER, borderRadius: 4,
+    padding: 14, alignItems: 'center', gap: 4,
+    backgroundColor: SURFACE,
+  },
+  roleBtnText: { fontSize: 15, fontWeight: '700', color: TEXT },
+  roleBtnSub: { fontSize: 10, color: TEXT2, textAlign: 'center', letterSpacing: 0.3 },
 });
 
 const terms = StyleSheet.create({

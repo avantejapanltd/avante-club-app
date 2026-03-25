@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTeam } from '../../context/TeamContext';
-import { useSchedule, ScheduleItem } from '../../context/ScheduleContext';
+import { useSchedule, ScheduleItem, AttendanceResponse } from '../../context/ScheduleContext';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
 const BRAND_COLOR = '#1A3C5E';
@@ -55,9 +55,38 @@ const makeEmptyForm = (firstCategory: string, firstGroup: string): NewSchedule =
   startTime: makeTime(18, 0), endTime: makeTime(20, 0), location: '', memo: '',
 });
 
+// ユーザーバッジ（名前の頭文字＋ステータスカラー）
+function UserBadge({ response, primaryColor }: { response: AttendanceResponse; primaryColor: string }) {
+  const STATUS_COLOR: Record<string, string> = {
+    present: '#28A745',
+    absent: '#DC3545',
+    maybe: '#FFC107',
+  };
+  const color = STATUS_COLOR[response.status] ?? primaryColor;
+  const char = response.userName[0] ?? '?';
+  return (
+    <View style={badge.wrap}>
+      <View style={[badge.circle, { backgroundColor: color }]}>
+        <Text style={badge.char}>{char}</Text>
+      </View>
+      <Text style={badge.name} numberOfLines={1}>{response.userName}</Text>
+    </View>
+  );
+}
+
+const badge = StyleSheet.create({
+  wrap: { alignItems: 'center', width: 44 },
+  circle: {
+    width: 36, height: 36, borderRadius: 18,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  char: { color: '#fff', fontSize: 14, fontWeight: '700' },
+  name: { fontSize: 9, color: '#666', marginTop: 3, textAlign: 'center' },
+});
+
 export default function AdminScheduleScreen() {
   const { settings } = useTeam();
-  const { schedules, addSchedule, updateSchedule, deleteSchedule } = useSchedule();
+  const { schedules, addSchedule, updateSchedule, deleteSchedule, getAttendanceForSchedule } = useSchedule();
   const [activeGroup, setActiveGroup] = useState('すべて');
   const [modalVisible, setModalVisible] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -153,24 +182,72 @@ export default function AdminScheduleScreen() {
               </View>
             )}
 
-            <View style={styles.attendanceSummary}>
-              <View style={[styles.attendanceBox, { backgroundColor: '#E8F5E9' }]}>
-                <Text style={[styles.attendanceNum, { color: '#28A745' }]}>{item.presentCount}</Text>
-                <Text style={styles.attendanceLabel}>参加</Text>
-              </View>
-              <View style={[styles.attendanceBox, { backgroundColor: '#FFEBEE' }]}>
-                <Text style={[styles.attendanceNum, { color: '#DC3545' }]}>{item.absentCount}</Text>
-                <Text style={styles.attendanceLabel}>欠席</Text>
-              </View>
-              <View style={[styles.attendanceBox, { backgroundColor: '#FFF8E1' }]}>
-                <Text style={[styles.attendanceNum, { color: '#FFC107' }]}>{item.maybeCount}</Text>
-                <Text style={styles.attendanceLabel}>未定</Text>
-              </View>
-              <View style={[styles.attendanceBox, { backgroundColor: '#F5F5F5' }]}>
-                <Text style={[styles.attendanceNum, { color: '#999' }]}>{unanswered(item)}</Text>
-                <Text style={styles.attendanceLabel}>未回答</Text>
-              </View>
-            </View>
+            {(() => {
+              const responses = getAttendanceForSchedule(item.id);
+              const present = responses.filter(r => r.status === 'present');
+              const absent  = responses.filter(r => r.status === 'absent');
+              const maybe   = responses.filter(r => r.status === 'maybe');
+              const presentCount = present.length || item.presentCount;
+              const absentCount  = absent.length  || item.absentCount;
+              const maybeCount   = maybe.length   || item.maybeCount;
+              return (
+                <>
+                  <View style={styles.attendanceSummary}>
+                    <View style={[styles.attendanceBox, { backgroundColor: '#E8F5E9' }]}>
+                      <Text style={[styles.attendanceNum, { color: '#28A745' }]}>{presentCount}</Text>
+                      <Text style={styles.attendanceLabel}>参加</Text>
+                    </View>
+                    <View style={[styles.attendanceBox, { backgroundColor: '#FFEBEE' }]}>
+                      <Text style={[styles.attendanceNum, { color: '#DC3545' }]}>{absentCount}</Text>
+                      <Text style={styles.attendanceLabel}>欠席</Text>
+                    </View>
+                    <View style={[styles.attendanceBox, { backgroundColor: '#FFF8E1' }]}>
+                      <Text style={[styles.attendanceNum, { color: '#FFC107' }]}>{maybeCount}</Text>
+                      <Text style={styles.attendanceLabel}>未定</Text>
+                    </View>
+                    <View style={[styles.attendanceBox, { backgroundColor: '#F5F5F5' }]}>
+                      <Text style={[styles.attendanceNum, { color: '#999' }]}>{unanswered(item)}</Text>
+                      <Text style={styles.attendanceLabel}>未回答</Text>
+                    </View>
+                  </View>
+
+                  {responses.length > 0 && (
+                    <View style={styles.badgeSection}>
+                      {present.length > 0 && (
+                        <View style={styles.badgeRow}>
+                          <View style={[styles.badgeRowLabel, { backgroundColor: '#E8F5E9' }]}>
+                            <Text style={[styles.badgeRowLabelText, { color: '#28A745' }]}>参加</Text>
+                          </View>
+                          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.badgeList}>
+                            {present.map(r => <UserBadge key={r.userEmail} response={r} primaryColor={settings.primaryColor} />)}
+                          </ScrollView>
+                        </View>
+                      )}
+                      {absent.length > 0 && (
+                        <View style={styles.badgeRow}>
+                          <View style={[styles.badgeRowLabel, { backgroundColor: '#FFEBEE' }]}>
+                            <Text style={[styles.badgeRowLabelText, { color: '#DC3545' }]}>欠席</Text>
+                          </View>
+                          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.badgeList}>
+                            {absent.map(r => <UserBadge key={r.userEmail} response={r} primaryColor={settings.primaryColor} />)}
+                          </ScrollView>
+                        </View>
+                      )}
+                      {maybe.length > 0 && (
+                        <View style={styles.badgeRow}>
+                          <View style={[styles.badgeRowLabel, { backgroundColor: '#FFF8E1' }]}>
+                            <Text style={[styles.badgeRowLabelText, { color: '#FFC107' }]}>未定</Text>
+                          </View>
+                          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.badgeList}>
+                            {maybe.map(r => <UserBadge key={r.userEmail} response={r} primaryColor={settings.primaryColor} />)}
+                          </ScrollView>
+                        </View>
+                      )}
+                    </View>
+                  )}
+                </>
+              );
+            })()}
           </View>
         ))}
       </ScrollView>
@@ -369,6 +446,11 @@ const styles = StyleSheet.create({
   attendanceBox: { flex: 1, borderRadius: 8, padding: 8, alignItems: 'center' },
   attendanceNum: { fontSize: 20, fontWeight: 'bold' },
   attendanceLabel: { fontSize: 11, color: '#666', marginTop: 2 },
+  badgeSection: { marginTop: 12, gap: 8 },
+  badgeRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  badgeRowLabel: { borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4, minWidth: 40, alignItems: 'center' },
+  badgeRowLabelText: { fontSize: 11, fontWeight: '700' },
+  badgeList: { flexDirection: 'row', gap: 8, paddingVertical: 2 },
   modal: { flex: 1, backgroundColor: '#F5F7FA' },
   modalHeader: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',

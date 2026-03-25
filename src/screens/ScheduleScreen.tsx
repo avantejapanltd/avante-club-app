@@ -6,7 +6,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../context/AuthContext';
 import { useTeam } from '../context/TeamContext';
-import { useSchedule } from '../context/ScheduleContext';
+import { useSchedule, AttendanceStatus } from '../context/ScheduleContext';
 
 const BG = '#F5F7FA';
 const SURFACE = '#FFFFFF';
@@ -17,7 +17,7 @@ const GREEN = '#28A745';
 const RED = '#DC3545';
 const YELLOW = '#FFC107';
 
-type Attendance = 'present' | 'absent' | 'maybe' | null;
+type Attendance = AttendanceStatus | null;
 
 const ATTENDANCE_LABEL: Record<NonNullable<Attendance>, string> = {
   present: '参加',
@@ -52,12 +52,12 @@ export default function ScheduleScreen() {
     schedules,
     setCarpoolEntry, removeCarpoolEntry, getCarpoolForSchedule,
     addCarpoolPost, deleteCarpoolPost, getCarpoolPostsForSchedule,
+    setAttendanceResponse, removeAttendanceResponse, getAttendanceForSchedule,
   } = useSchedule();
 
   const groups = settings.scheduleGroups ?? [];
   const defaultGroup = user?.group && groups.includes(user.group) ? user.group : groups[0] ?? '';
   const [activeGroup, setActiveGroup] = useState(defaultGroup);
-  const [attendances, setAttendances] = useState<Record<string, Attendance>>({});
   // For driver: capacity input and "show driver input" toggle
   const [showDriverInput, setShowDriverInput] = useState<Record<string, boolean>>({});
   const [capacities, setCapacities] = useState<Record<string, string>>({});
@@ -70,11 +70,28 @@ export default function ScheduleScreen() {
   const email = user?.email ?? '';
   const name = user?.name ?? '';
 
+  const getMyAttendance = (scheduleId: string): Attendance => {
+    const responses = getAttendanceForSchedule(scheduleId);
+    return (responses.find(r => r.userEmail === email)?.status ?? null) as Attendance;
+  };
+
   const handleAttendance = (id: string, value: Attendance) => {
-    setAttendances(prev => ({ ...prev, [id]: value }));
-    if (value !== 'present') {
+    if (value === null) {
+      removeAttendanceResponse(id, email);
       removeCarpoolEntry(id, email);
       setShowDriverInput(prev => ({ ...prev, [id]: false }));
+    } else {
+      setAttendanceResponse({
+        scheduleId: id,
+        userEmail: email,
+        userName: name,
+        userRole: (user?.role === 'coach' ? 'coach' : 'member'),
+        status: value,
+      });
+      if (value !== 'present') {
+        removeCarpoolEntry(id, email);
+        setShowDriverInput(prev => ({ ...prev, [id]: false }));
+      }
     }
   };
 
@@ -145,7 +162,7 @@ export default function ScheduleScreen() {
           </View>
         ) : (
           filtered.map(item => {
-            const attendance = attendances[item.id] ?? null;
+            const attendance = getMyAttendance(item.id);
             const { entries, assignments } = getCarpoolForSchedule(item.id);
             const myEntry = entries.find(e => e.userEmail === email);
             const posts = getCarpoolPostsForSchedule(item.id);
@@ -189,9 +206,7 @@ export default function ScheduleScreen() {
                     </TouchableOpacity>
                   </View>
                 ) : (
-                  <TouchableOpacity onPress={() => {
-                    handleAttendance(item.id, null);
-                  }}>
+                  <TouchableOpacity onPress={() => handleAttendance(item.id, null)}>
                     <Text style={styles.changeLink}>回答を変更する</Text>
                   </TouchableOpacity>
                 )}

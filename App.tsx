@@ -14,7 +14,6 @@ import { ScheduleProvider } from './src/context/ScheduleContext';
 import ClubSelectScreen from './src/screens/auth/ClubSelectScreen';
 import LoginScreen from './src/screens/auth/LoginScreen';
 import SignUpScreen from './src/screens/auth/SignUpScreen';
-import ProfileSetupScreen from './src/screens/auth/ProfileSetupScreen';
 import PaymentSetupScreen from './src/screens/auth/PaymentSetupScreen';
 import HomeScreen from './src/screens/HomeScreen';
 import ScheduleScreen from './src/screens/ScheduleScreen';
@@ -120,7 +119,6 @@ function AppNavigator() {
     );
   }
 
-  if (!user.profileSetup) return <ProfileSetupScreen />;
   if (user.role === 'member' && !user.paymentSetup) return <PaymentSetupScreen />;
 
   if (user.role === 'manager') return <ManagerTabs />;

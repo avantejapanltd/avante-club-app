@@ -8,8 +8,6 @@ export interface AuthUser {
   email: string;
   group?: string;
   paymentSetup: boolean;
-  profileSetup: boolean;
-  avatarUri: string | null;
   paymentMethod?: 'card' | 'link';
 }
 
@@ -24,10 +22,8 @@ const LOCKOUT_DURATION_MS = 30 * 1000;
 interface AuthContextType {
   user: AuthUser | null;
   login: (role: UserRole, name: string, email: string, group?: string) => void;
-  signUp: (name: string, email: string) => void;
+  signUp: (name: string, email: string, role?: 'member' | 'coach') => void;
   completePaymentSetup: () => void;
-  completeProfileSetup: () => void;
-  updateAvatar: (uri: string | null) => void;
   logout: () => void;
   recordLoginFailure: (email: string) => void;
   resetLoginAttempts: (email: string) => void;
@@ -39,8 +35,6 @@ const AuthContext = createContext<AuthContextType>({
   login: () => {},
   signUp: () => {},
   completePaymentSetup: () => {},
-  completeProfileSetup: () => {},
-  updateAvatar: () => {},
   logout: () => {},
   recordLoginFailure: () => {},
   resetLoginAttempts: () => {},
@@ -79,31 +73,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = (role: UserRole, name: string, email: string, group?: string) => {
     const paymentSetup = role === 'coach' || role === 'manager';
-    setUser({ role, name, email, group, paymentSetup, profileSetup: true, avatarUri: null });
+    setUser({ role, name, email, group, paymentSetup });
   };
 
-  const signUp = (name: string, email: string) => {
-    setUser({ role: 'member', name, email, paymentSetup: false, profileSetup: false, avatarUri: null });
+  const signUp = (name: string, email: string, role: 'member' | 'coach' = 'member') => {
+    // コーチは月謝設定不要
+    const paymentSetup = role === 'coach';
+    setUser({ role, name, email, paymentSetup });
   };
 
   const completePaymentSetup = () => {
     setUser(prev => prev ? { ...prev, paymentSetup: true } : null);
   };
 
-  const completeProfileSetup = () => {
-    setUser(prev => prev ? { ...prev, profileSetup: true } : null);
-  };
-
-  const updateAvatar = (uri: string | null) => {
-    setUser(prev => prev ? { ...prev, avatarUri: uri } : null);
-  };
-
   const logout = () => setUser(null);
 
   return (
     <AuthContext.Provider value={{
-      user, login, signUp, completePaymentSetup, completeProfileSetup,
-      updateAvatar, logout, recordLoginFailure, resetLoginAttempts, getLoginLockStatus,
+      user, login, signUp, completePaymentSetup, logout,
+      recordLoginFailure, resetLoginAttempts, getLoginLockStatus,
     }}>
       {children}
     </AuthContext.Provider>

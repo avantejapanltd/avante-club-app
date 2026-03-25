@@ -16,6 +16,16 @@ export interface ScheduleItem {
   totalMembers: number;
 }
 
+export type AttendanceStatus = 'present' | 'absent' | 'maybe';
+
+export interface AttendanceResponse {
+  scheduleId: string;
+  userEmail: string;
+  userName: string;
+  userRole: 'member' | 'coach';
+  status: AttendanceStatus;
+}
+
 export type TransportType = 'driver' | 'rider' | 'direct';
 
 export interface CarpoolEntry {
@@ -76,6 +86,10 @@ interface ScheduleContextType {
   addCarpoolPost: (post: Omit<CarpoolPost, 'id' | 'postedAt'>) => void;
   deleteCarpoolPost: (postId: string) => void;
   getCarpoolPostsForSchedule: (scheduleId: string) => CarpoolPost[];
+  attendanceResponses: AttendanceResponse[];
+  setAttendanceResponse: (res: AttendanceResponse) => void;
+  removeAttendanceResponse: (scheduleId: string, userEmail: string) => void;
+  getAttendanceForSchedule: (scheduleId: string) => AttendanceResponse[];
 }
 
 const ScheduleContext = createContext<ScheduleContextType>({
@@ -91,6 +105,10 @@ const ScheduleContext = createContext<ScheduleContextType>({
   addCarpoolPost: () => {},
   deleteCarpoolPost: () => {},
   getCarpoolPostsForSchedule: () => [],
+  attendanceResponses: [],
+  setAttendanceResponse: () => {},
+  removeAttendanceResponse: () => {},
+  getAttendanceForSchedule: () => [],
 });
 
 function buildCarpoolAssignments(entries: CarpoolEntry[]): CarpoolAssignment[] {
@@ -121,6 +139,7 @@ export function ScheduleProvider({ children }: { children: React.ReactNode }) {
   const [schedules, setSchedules] = useState<ScheduleItem[]>(INITIAL_SCHEDULES);
   const [carpoolEntries, setCarpoolEntries] = useState<CarpoolEntry[]>([]);
   const [carpoolPosts, setCarpoolPosts] = useState<CarpoolPost[]>([]);
+  const [attendanceResponses, setAttendanceResponses] = useState<AttendanceResponse[]>([]);
 
   const addSchedule = (s: Omit<ScheduleItem, 'id' | 'presentCount' | 'absentCount' | 'maybeCount' | 'totalMembers'>) => {
     setSchedules(prev => [...prev, {
@@ -171,11 +190,31 @@ export function ScheduleProvider({ children }: { children: React.ReactNode }) {
     return carpoolPosts.filter(p => p.scheduleId === scheduleId);
   }, [carpoolPosts]);
 
+  const setAttendanceResponse = (res: AttendanceResponse) => {
+    setAttendanceResponses(prev => {
+      const filtered = prev.filter(
+        r => !(r.scheduleId === res.scheduleId && r.userEmail === res.userEmail)
+      );
+      return [...filtered, res];
+    });
+  };
+
+  const removeAttendanceResponse = (scheduleId: string, userEmail: string) => {
+    setAttendanceResponses(prev =>
+      prev.filter(r => !(r.scheduleId === scheduleId && r.userEmail === userEmail))
+    );
+  };
+
+  const getAttendanceForSchedule = useCallback((scheduleId: string) => {
+    return attendanceResponses.filter(r => r.scheduleId === scheduleId);
+  }, [attendanceResponses]);
+
   return (
     <ScheduleContext.Provider value={{
       schedules, addSchedule, updateSchedule, deleteSchedule,
       carpoolEntries, setCarpoolEntry, removeCarpoolEntry, getCarpoolForSchedule,
       carpoolPosts, addCarpoolPost, deleteCarpoolPost, getCarpoolPostsForSchedule,
+      attendanceResponses, setAttendanceResponse, removeAttendanceResponse, getAttendanceForSchedule,
     }}>
       {children}
     </ScheduleContext.Provider>
