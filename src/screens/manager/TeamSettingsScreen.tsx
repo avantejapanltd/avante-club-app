@@ -1,8 +1,19 @@
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  TextInput, SafeAreaView as RNSafeAreaView, Alert,
+  TextInput, SafeAreaView as RNSafeAreaView, Alert, Platform,
 } from 'react-native';
+
+function confirmDelete(title: string, message: string, onConfirm: () => void) {
+  if (Platform.OS === 'web') {
+    if (window.confirm(`${title}\n${message}`)) onConfirm();
+  } else {
+    Alert.alert(title, message, [
+      { text: 'キャンセル', style: 'cancel' },
+      { text: '削除', style: 'destructive', onPress: onConfirm },
+    ]);
+  }
+}
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTeam, COLOR_THEMES, SPORT_EMOJIS } from '../../context/TeamContext';
 
@@ -30,13 +41,9 @@ export default function TeamSettingsScreen() {
       Alert.alert('削除できません', 'カテゴリは最低1つ必要です');
       return;
     }
-    Alert.alert('削除確認', `「${cat}」を削除しますか？`, [
-      { text: 'キャンセル', style: 'cancel' },
-      {
-        text: '削除', style: 'destructive',
-        onPress: () => updateSettings({ scheduleCategories: (settings.scheduleCategories ?? []).filter(c => c !== cat) }),
-      },
-    ]);
+    confirmDelete('削除確認', `「${cat}」を削除しますか？`, () =>
+      updateSettings({ scheduleCategories: (settings.scheduleCategories ?? []).filter(c => c !== cat) })
+    );
   };
 
   const handleAddScheduleGroup = () => {
@@ -55,13 +62,9 @@ export default function TeamSettingsScreen() {
       Alert.alert('削除できません', 'グループは最低1つ必要です');
       return;
     }
-    Alert.alert('削除確認', `「${group}」を削除しますか？`, [
-      { text: 'キャンセル', style: 'cancel' },
-      {
-        text: '削除', style: 'destructive',
-        onPress: () => updateSettings({ scheduleGroups: (settings.scheduleGroups ?? []).filter(g => g !== group) }),
-      },
-    ]);
+    confirmDelete('削除確認', `「${group}」を削除しますか？`, () =>
+      updateSettings({ scheduleGroups: (settings.scheduleGroups ?? []).filter(g => g !== group) })
+    );
   };
 
   const apply = (patch: Parameters<typeof updateSettings>[0]) => {

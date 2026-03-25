@@ -11,6 +11,17 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 const BRAND_COLOR = '#1A3C5E';
 const ACCENT_COLOR = '#E8A020';
 
+function confirmDelete(title: string, message: string, onConfirm: () => void) {
+  if (Platform.OS === 'web') {
+    if (window.confirm(`${title}\n${message}`)) onConfirm();
+  } else {
+    Alert.alert(title, message, [
+      { text: 'キャンセル', style: 'cancel' },
+      { text: '削除', style: 'destructive', onPress: onConfirm },
+    ]);
+  }
+}
+
 
 
 interface NewSchedule {
@@ -88,10 +99,7 @@ export default function AdminScheduleScreen() {
   };
 
   const handleDelete = (id: string) => {
-    Alert.alert('削除確認', 'このスケジュールを削除しますか？', [
-      { text: 'キャンセル', style: 'cancel' },
-      { text: '削除', style: 'destructive', onPress: () => deleteSchedule(id) },
-    ]);
+    confirmDelete('削除確認', 'このスケジュールを削除しますか？', () => deleteSchedule(id));
   };
 
   const unanswered = (s: ScheduleItem) =>

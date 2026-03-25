@@ -3,6 +3,17 @@ import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
   Modal, TextInput, Alert, Platform,
 } from 'react-native';
+
+function confirmDelete(title: string, message: string, onConfirm: () => void) {
+  if (Platform.OS === 'web') {
+    if (window.confirm(`${title}\n${message}`)) onConfirm();
+  } else {
+    Alert.alert(title, message, [
+      { text: 'キャンセル', style: 'cancel' },
+      { text: '削除', style: 'destructive', onPress: onConfirm },
+    ]);
+  }
+}
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTeam } from '../../context/TeamContext';
 import * as ImagePicker from 'expo-image-picker';
@@ -84,10 +95,7 @@ export default function AdminDocumentScreen() {
   };
 
   const handleDelete = (id: string, title: string) => {
-    Alert.alert('削除確認', `「${title}」を削除しますか？\n会員ページからも削除されます。`, [
-      { text: 'キャンセル', style: 'cancel' },
-      { text: '削除', style: 'destructive', onPress: () => deleteDocument(id) },
-    ]);
+    confirmDelete('削除確認', `「${title}」を削除しますか？\n会員ページからも削除されます。`, () => deleteDocument(id));
   };
 
   const handleAddCategory = () => {
@@ -102,10 +110,7 @@ export default function AdminDocumentScreen() {
       Alert.alert('削除できません', `「${cat}」カテゴリの書類が存在します。先に書類を削除してください。`);
       return;
     }
-    Alert.alert('削除確認', `カテゴリ「${cat}」を削除しますか？`, [
-      { text: 'キャンセル', style: 'cancel' },
-      { text: '削除', style: 'destructive', onPress: () => deleteCategory(cat) },
-    ]);
+    confirmDelete('削除確認', `カテゴリ「${cat}」を削除しますか？`, () => deleteCategory(cat));
   };
 
   return (
