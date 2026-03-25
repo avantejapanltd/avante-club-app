@@ -97,10 +97,53 @@ const ClubContext = createContext<ClubContextType>({
   updateClubId: () => 'Not initialized',
 });
 
+// ─── localStorage 永続化ヘルパー ───────────────────────────────
+const LS_KEY = 'clubapp_settings_v1';
+
+function loadSavedSettings(): Record<string, TeamSettings> {
+  try {
+    if (typeof window === 'undefined') return {};
+    const raw = window.localStorage.getItem(LS_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+function persistSettings(clubId: string, settings: TeamSettings) {
+  try {
+    if (typeof window === 'undefined') return;
+    const all = loadSavedSettings();
+    window.localStorage.setItem(LS_KEY, JSON.stringify({ ...all, [clubId]: settings }));
+  } catch {}
+}
+
+function renamePersistedClub(oldId: string, newId: string) {
+  try {
+    if (typeof window === 'undefined') return;
+    const all = loadSavedSettings();
+    if (!all[oldId]) return;
+    const updated = { ...all, [newId]: all[oldId] };
+    delete updated[oldId];
+    window.localStorage.setItem(LS_KEY, JSON.stringify(updated));
+  } catch {}
+}
+
+// 初期クラブデータに localStorage の設定を上書きして返す
+function buildInitialClubs(): Record<string, ClubData> {
+  const base = Object.fromEntries(INITIAL_CLUBS.map(c => [c.clubId, c]));
+  const saved = loadSavedSettings();
+  for (const [id, settings] of Object.entries(saved)) {
+    if (base[id]) {
+      base[id] = { ...base[id], settings };
+    }
+  }
+  return base;
+}
+// ────────────────────────────────────────────────────────────────
+
 export function ClubProvider({ children }: { children: React.ReactNode }) {
-  const [clubs, setClubs] = useState<Record<string, ClubData>>(
-    Object.fromEntries(INITIAL_CLUBS.map(c => [c.clubId, c]))
-  );
+  const [clubs, setClubs] = useState<Record<string, ClubData>>(buildInitialClubs);
   const [currentClubId, setCurrentClubId] = useState<string | null>(null);
 
   const currentClub = currentClubId ? (clubs[currentClubId] ?? null) : null;
@@ -114,13 +157,14 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
 
   const updateCurrentSettings = (patch: Partial<TeamSettings>) => {
     if (!currentClubId) return;
-    setClubs(prev => ({
-      ...prev,
-      [currentClubId]: {
-        ...prev[currentClubId],
-        settings: { ...prev[currentClubId].settings, ...patch },
-      },
-    }));
+    setClubs(prev => {
+      const newSettings = { ...prev[currentClubId].settings, ...patch };
+      persistSettings(currentClubId, newSettings);
+      return {
+        ...prev,
+        [currentClubId]: { ...prev[currentClubId], settings: newSettings },
+      };
+    });
   };
 
   const updateClubId = (newId: string): string | null => {
@@ -128,10 +172,11 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
     const trimmed = newId.trim().toUpperCase();
     if (!trimmed) return 'IDを入力してください';
     if (trimmed.length < 3) return 'IDは3文字以上で設定してください';
-    if (trimmed === currentClubId) return null; // no change needed
+    if (trimmed === currentClubId) return null;
     if (clubs[trimmed]) return 'このIDはすでに使用されています';
 
     const updated: ClubData = { ...clubs[currentClubId], clubId: trimmed };
+    renamePersistedClub(currentClubId, trimmed);
     setClubs(prev => {
       const next = { ...prev };
       delete next[currentClubId];
