@@ -17,8 +17,9 @@ const ACCENT = '#1A3C5E';
 // 開発用テスト認証情報（Supabase接続後に削除）
 // UIには表示しない
 const TEST_ACCOUNTS: Record<string, { password: string; role: UserRole; name: string }> = {
-  'coach@avante.jp':   { password: 'coach123',   role: 'coach',   name: '指導者' },
-  'manager@avante.jp': { password: 'manager123', role: 'manager', name: '管理者' },
+  'player123@avante.jp': { password: 'player123', role: 'member',  name: 'テスト会員' },
+  'coach@avante.jp':     { password: 'coach123',  role: 'coach',   name: '指導者' },
+  'manager@avante.jp':   { password: 'manager123',role: 'manager', name: '管理者' },
 };
 
 type Tab = 'member' | 'coach' | 'manager';
@@ -53,8 +54,22 @@ export default function LoginScreen({ onSignUp }: Props) {
     }
 
     if (tab === 'member') {
-      // 会員：Supabase認証に接続するまでの仮実装
-      // パスワードの最低長だけ確認
+      const account = TEST_ACCOUNTS[trimmedEmail];
+      if (account && account.role === 'member') {
+        if (account.password !== password) {
+          recordLoginFailure(trimmedEmail);
+          const newLock = getLoginLockStatus(trimmedEmail);
+          setError(newLock.locked
+            ? `ログイン試行回数が上限を超えました。${newLock.remainingSeconds}秒後に再試行してください`
+            : 'メールアドレスまたはパスワードが間違っています'
+          );
+          return;
+        }
+        resetLoginAttempts(trimmedEmail);
+        login('member', account.name, trimmedEmail);
+        return;
+      }
+      // テストアカウント以外は最低長チェックのみ
       if (password.length < 6) {
         setError('パスワードを入力してください');
         return;
