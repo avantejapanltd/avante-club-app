@@ -17,7 +17,7 @@ const ACCENT = '#1A3C5E';
 // 開発用テスト認証情報（Supabase接続後に削除）
 // UIには表示しない
 const TEST_ACCOUNTS: Record<string, { password: string; role: UserRole; name: string }> = {
-  'player123@avante.jp': { password: 'player123', role: 'member',  name: 'テスト会員' },
+  'player@avante.jp': { password: 'player123', role: 'member',  name: 'テスト会員' },
   'coach@avante.jp':     { password: 'coach123',  role: 'coach',   name: '指導者' },
   'manager@avante.jp':   { password: 'manager123',role: 'manager', name: '管理者' },
 };
