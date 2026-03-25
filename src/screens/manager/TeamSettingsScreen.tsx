@@ -16,14 +16,33 @@ function confirmDelete(title: string, message: string, onConfirm: () => void) {
 }
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTeam, COLOR_THEMES, SPORT_EMOJIS } from '../../context/TeamContext';
+import { useClub } from '../../context/ClubContext';
 
 export default function TeamSettingsScreen() {
   const { settings, updateSettings } = useTeam();
+  const { currentClubId, updateClubId } = useClub();
   const [localName, setLocalName] = useState(settings.teamName);
   const [localTagline, setLocalTagline] = useState(settings.tagline);
   const [localLogoValue, setLocalLogoValue] = useState(settings.logoValue);
   const [newScheduleCat, setNewScheduleCat] = useState('');
   const [newScheduleGroup, setNewScheduleGroup] = useState('');
+  const [newClubId, setNewClubId] = useState(currentClubId ?? '');
+  const [clubIdError, setClubIdError] = useState('');
+
+  const handleUpdateClubId = () => {
+    setClubIdError('');
+    const err = updateClubId(newClubId);
+    if (err) {
+      setClubIdError(err);
+    } else {
+      setNewClubId(newClubId.trim().toUpperCase());
+      if (Platform.OS === 'web') {
+        window.alert('クラブIDを更新しました');
+      } else {
+        Alert.alert('完了', 'クラブIDを更新しました');
+      }
+    }
+  };
 
   const handleAddScheduleCategory = () => {
     const trimmed = newScheduleCat.trim();
@@ -103,6 +122,33 @@ export default function TeamSettingsScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
+
+        {/* クラブID管理 */}
+        <View style={styles.clubIdSection}>
+          <Text style={styles.sectionLabel}>クラブID</Text>
+          <Text style={styles.clubIdDesc}>
+            このIDはメンバーがログイン時に入力するIDです。変更すると既存メンバーは新しいIDでアクセスする必要があります。
+          </Text>
+          <View style={styles.clubIdRow}>
+            <TextInput
+              style={[styles.input, styles.clubIdInput]}
+              value={newClubId}
+              onChangeText={v => { setNewClubId(v.toUpperCase()); setClubIdError(''); }}
+              placeholder="例: MYCLUB-001"
+              autoCapitalize="characters"
+              autoCorrect={false}
+            />
+            <TouchableOpacity
+              style={[styles.clubIdBtn, { backgroundColor: settings.primaryColor }]}
+              onPress={handleUpdateClubId}>
+              <Text style={styles.clubIdBtnText}>変更</Text>
+            </TouchableOpacity>
+          </View>
+          {clubIdError !== '' && <Text style={styles.clubIdError}>{clubIdError}</Text>}
+          <Text style={styles.clubIdCurrent}>
+            現在のID: <Text style={{ fontWeight: '700', color: settings.primaryColor }}>{currentClubId}</Text>
+          </Text>
+        </View>
 
         {/* ライブプレビュー */}
         <View style={styles.previewSection}>
@@ -396,4 +442,18 @@ const styles = StyleSheet.create({
 
   bottomNote: { alignItems: 'center', paddingBottom: 8 },
   bottomNoteText: { fontSize: 12, color: '#bbb', textAlign: 'center' },
+
+  // Club ID section
+  clubIdSection: {
+    backgroundColor: '#fff', borderRadius: 14, padding: 16,
+    shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 6, elevation: 1,
+    gap: 10, borderWidth: 1.5, borderColor: '#E2E6EA',
+  },
+  clubIdDesc: { fontSize: 12, color: '#888', lineHeight: 18 },
+  clubIdRow: { flexDirection: 'row', gap: 8, alignItems: 'center' },
+  clubIdInput: { flex: 1, fontWeight: '700', letterSpacing: 1 },
+  clubIdBtn: { borderRadius: 10, paddingHorizontal: 18, paddingVertical: 13 },
+  clubIdBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 14 },
+  clubIdError: { color: '#DC3545', fontSize: 12, fontWeight: '600' },
+  clubIdCurrent: { fontSize: 12, color: '#888' },
 });

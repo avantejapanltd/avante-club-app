@@ -6,6 +6,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth, UserRole } from '../../context/AuthContext';
 import { useTeam } from '../../context/TeamContext';
+import { useClub } from '../../context/ClubContext';
 
 const BG = '#F5F7FA';
 const SURFACE = '#FFFFFF';
@@ -13,14 +14,6 @@ const BORDER = '#E2E6EA';
 const TEXT = '#1A1A2E';
 const TEXT2 = '#888899';
 const ACCENT = '#1A3C5E';
-
-// 開発用テスト認証情報（Supabase接続後に削除）
-// UIには表示しない
-const TEST_ACCOUNTS: Record<string, { password: string; role: UserRole; name: string }> = {
-  'player@avante.jp': { password: 'player123', role: 'member',  name: 'テスト会員' },
-  'coach@avante.jp':     { password: 'coach123',  role: 'coach',   name: '指導者' },
-  'manager@avante.jp':   { password: 'manager123',role: 'manager', name: '管理者' },
-};
 
 type Tab = 'member' | 'coach' | 'manager';
 
@@ -31,10 +24,13 @@ interface Props {
 export default function LoginScreen({ onSignUp }: Props) {
   const { login, recordLoginFailure, resetLoginAttempts, getLoginLockStatus } = useAuth();
   const { settings } = useTeam();
+  const { currentClub } = useClub();
   const [tab, setTab] = useState<Tab>('member');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+
+  const testAccounts = currentClub?.testAccounts ?? {};
 
   const handleLogin = () => {
     setError('');
@@ -54,7 +50,7 @@ export default function LoginScreen({ onSignUp }: Props) {
     }
 
     if (tab === 'member') {
-      const account = TEST_ACCOUNTS[trimmedEmail];
+      const account = testAccounts[trimmedEmail];
       if (account && account.role === 'member') {
         if (account.password !== password) {
           recordLoginFailure(trimmedEmail);
@@ -79,7 +75,7 @@ export default function LoginScreen({ onSignUp }: Props) {
       return;
     }
 
-    const account = TEST_ACCOUNTS[trimmedEmail];
+    const account = testAccounts[trimmedEmail];
     if (!account || account.password !== password || account.role !== tab) {
       recordLoginFailure(trimmedEmail);
       const newLock = getLoginLockStatus(trimmedEmail);
@@ -99,8 +95,8 @@ export default function LoginScreen({ onSignUp }: Props) {
 
   const placeholder: Record<Tab, string> = {
     member:  'example@email.com',
-    coach:   'coach@avante.jp',
-    manager: 'manager@avante.jp',
+    coach:   'coach@example.jp',
+    manager: 'manager@example.jp',
   };
 
   return (
@@ -110,6 +106,11 @@ export default function LoginScreen({ onSignUp }: Props) {
           <View style={styles.logoArea}>
             <Text style={styles.logoText}>{settings.teamName}</Text>
             <Text style={[styles.logoSub, { color: settings.primaryColor }]}>MEMBER LOGIN</Text>
+            <View style={[styles.clubIdBadge, { borderColor: settings.primaryColor }]}>
+              <Text style={[styles.clubIdText, { color: settings.primaryColor }]}>
+                ID: {currentClub?.clubId}
+              </Text>
+            </View>
           </View>
 
           {/* 3タブ */}
@@ -169,9 +170,14 @@ export default function LoginScreen({ onSignUp }: Props) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: BG },
   content: { padding: 28, flexGrow: 1 },
-  logoArea: { alignItems: 'center', marginVertical: 48 },
+  logoArea: { alignItems: 'center', marginVertical: 40 },
   logoText: { fontSize: 26, fontWeight: '800', color: TEXT, letterSpacing: 4 },
   logoSub: { fontSize: 11, color: ACCENT, marginTop: 8, letterSpacing: 3, fontWeight: '600' },
+  clubIdBadge: {
+    marginTop: 10, paddingHorizontal: 12, paddingVertical: 4,
+    borderWidth: 1, borderRadius: 4,
+  },
+  clubIdText: { fontSize: 11, fontWeight: '700', letterSpacing: 2 },
   tabRow: {
     flexDirection: 'row', borderWidth: 1, borderColor: BORDER,
     borderRadius: 4, marginBottom: 28, overflow: 'hidden',

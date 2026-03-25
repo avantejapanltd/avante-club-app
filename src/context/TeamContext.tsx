@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext } from 'react';
+import { useClub } from './ClubContext';
 
 export interface TeamSettings {
   teamName: string;
@@ -28,15 +29,16 @@ export const SPORT_EMOJIS = [
   '⛹️', '🏆', '🥇', '🎯', '🌟', '🔥', '⚡', '🦁',
 ];
 
-const DEFAULT: TeamSettings = {
-  teamName: 'AVANTE JAPAN',
+// Fallback used only if somehow rendered outside ClubProvider
+const FALLBACK: TeamSettings = {
+  teamName: 'CLUB APP',
   tagline: 'スポーツクラブ',
   primaryColor: '#1A3C5E',
   accentColor: '#E8A020',
   logoType: 'initials',
-  logoValue: 'AJ',
-  scheduleCategories: ['練習', 'トレーニングマッチ', '招待大会', '公式戦'],
-  scheduleGroups: ['1年園児', '2年', '3年', '4年', 'サテライト', 'トップ'],
+  logoValue: 'CA',
+  scheduleCategories: ['練習', '公式戦'],
+  scheduleGroups: ['全体'],
 };
 
 interface TeamContextType {
@@ -45,16 +47,16 @@ interface TeamContextType {
 }
 
 const TeamContext = createContext<TeamContextType>({
-  settings: DEFAULT,
+  settings: FALLBACK,
   updateSettings: () => {},
 });
 
 export function TeamProvider({ children }: { children: React.ReactNode }) {
-  const [settings, setSettings] = useState<TeamSettings>(DEFAULT);
-  const updateSettings = (patch: Partial<TeamSettings>) =>
-    setSettings(prev => ({ ...prev, ...patch }));
+  const { currentClub, updateCurrentSettings } = useClub();
+  const settings = currentClub?.settings ?? FALLBACK;
+
   return (
-    <TeamContext.Provider value={{ settings, updateSettings }}>
+    <TeamContext.Provider value={{ settings, updateSettings: updateCurrentSettings }}>
       {children}
     </TeamContext.Provider>
   );

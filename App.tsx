@@ -5,11 +5,13 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Text } from 'react-native';
 
+import { ClubProvider, useClub } from './src/context/ClubContext';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
 import { DocumentProvider } from './src/context/DocumentContext';
 import { TeamProvider, useTeam } from './src/context/TeamContext';
 import { MemberProfileProvider } from './src/context/MemberProfileContext';
 import { ScheduleProvider } from './src/context/ScheduleContext';
+import ClubSelectScreen from './src/screens/auth/ClubSelectScreen';
 import LoginScreen from './src/screens/auth/LoginScreen';
 import SignUpScreen from './src/screens/auth/SignUpScreen';
 import PaymentSetupScreen from './src/screens/auth/PaymentSetupScreen';
@@ -61,7 +63,6 @@ function makeTabOptions(primaryColor: string) {
   });
 }
 
-// 会員タブ
 function MemberTabs() {
   const { settings } = useTeam();
   return (
@@ -75,7 +76,6 @@ function MemberTabs() {
   );
 }
 
-// 指導者タブ
 function CoachTabs() {
   const { settings } = useTeam();
   return (
@@ -88,7 +88,6 @@ function CoachTabs() {
   );
 }
 
-// 管理者タブ
 function ManagerTabs() {
   const { settings } = useTeam();
   return (
@@ -127,23 +126,50 @@ function AppNavigator() {
   return <MemberTabs />;
 }
 
+/**
+ * Club-scoped app: keyed by clubId so all state resets when club changes.
+ * All providers below re-mount on club switch → complete data isolation.
+ */
+function ClubScopedApp({ clubId }: { clubId: string }) {
+  return (
+    <TeamProvider>
+      <ScheduleProvider>
+        <MemberProfileProvider>
+          <AuthProvider>
+            <DocumentProvider>
+              <NavigationContainer key={clubId}>
+                <StatusBar style="light" />
+                <AppNavigator />
+              </NavigationContainer>
+            </DocumentProvider>
+          </AuthProvider>
+        </MemberProfileProvider>
+      </ScheduleProvider>
+    </TeamProvider>
+  );
+}
+
+/**
+ * Routes between club selection and the main app.
+ * Must be rendered inside ClubProvider.
+ */
+function ClubRouter() {
+  const { currentClubId } = useClub();
+  const [clubSelected, setClubSelected] = useState(false);
+
+  if (!currentClubId || !clubSelected) {
+    return <ClubSelectScreen onEnter={() => setClubSelected(true)} />;
+  }
+
+  return <ClubScopedApp key={currentClubId} clubId={currentClubId} />;
+}
+
 export default function App() {
   return (
     <SafeAreaProvider>
-      <TeamProvider>
-        <ScheduleProvider>
-          <MemberProfileProvider>
-            <AuthProvider>
-              <DocumentProvider>
-                <NavigationContainer>
-                  <StatusBar style="light" />
-                  <AppNavigator />
-                </NavigationContainer>
-              </DocumentProvider>
-            </AuthProvider>
-          </MemberProfileProvider>
-        </ScheduleProvider>
-      </TeamProvider>
+      <ClubProvider>
+        <ClubRouter />
+      </ClubProvider>
     </SafeAreaProvider>
   );
 }
