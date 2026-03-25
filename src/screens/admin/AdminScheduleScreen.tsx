@@ -5,47 +5,13 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTeam } from '../../context/TeamContext';
+import { useSchedule, ScheduleItem } from '../../context/ScheduleContext';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
 const BRAND_COLOR = '#1A3C5E';
 const ACCENT_COLOR = '#E8A020';
 
 
-interface ScheduleItem {
-  id: string;
-  group: string;
-  date: Date;
-  title: string;
-  opponent: string;
-  startTime: Date;
-  endTime: Date;
-  location: string;
-  memo: string;
-  presentCount: number;
-  absentCount: number;
-  maybeCount: number;
-  totalMembers: number;
-}
-
-function makeDate(y: number, m: number, d: number) {
-  return new Date(y, m - 1, d);
-}
-function makeTime(h: number, min: number) {
-  const d = new Date();
-  d.setHours(h, min, 0, 0);
-  return d;
-}
-
-const INITIAL_SCHEDULES: ScheduleItem[] = [
-  { id: '1', group: '1年園児', date: makeDate(2026, 3, 25), title: '練習', opponent: '', startTime: makeTime(15, 0), endTime: makeTime(16, 0), location: '○○体育館', memo: '', presentCount: 8, absentCount: 2, maybeCount: 1, totalMembers: 12 },
-  { id: '2', group: '2年', date: makeDate(2026, 3, 25), title: '練習', opponent: '', startTime: makeTime(16, 0), endTime: makeTime(17, 30), location: '○○体育館', memo: '', presentCount: 10, absentCount: 1, maybeCount: 2, totalMembers: 15 },
-  { id: '3', group: '3年', date: makeDate(2026, 3, 25), title: '練習', opponent: '', startTime: makeTime(17, 30), endTime: makeTime(19, 0), location: '○○スポーツセンター', memo: '', presentCount: 7, absentCount: 3, maybeCount: 0, totalMembers: 14 },
-  { id: '4', group: '3年', date: makeDate(2026, 3, 29), title: '公式戦', opponent: '○○FC', startTime: makeTime(10, 0), endTime: makeTime(15, 0), location: '△△グラウンド', memo: '雨天中止の場合は前日連絡', presentCount: 5, absentCount: 2, maybeCount: 7, totalMembers: 14 },
-  { id: '5', group: '4年', date: makeDate(2026, 3, 26), title: '練習', opponent: '', startTime: makeTime(17, 30), endTime: makeTime(19, 0), location: '○○スポーツセンター', memo: '', presentCount: 9, absentCount: 0, maybeCount: 3, totalMembers: 13 },
-  { id: '6', group: 'サテライト', date: makeDate(2026, 3, 27), title: '練習', opponent: '', startTime: makeTime(18, 0), endTime: makeTime(20, 0), location: '△△アリーナ', memo: '', presentCount: 12, absentCount: 2, maybeCount: 1, totalMembers: 16 },
-  { id: '7', group: 'トップ', date: makeDate(2026, 3, 25), title: '練習', opponent: '', startTime: makeTime(19, 0), endTime: makeTime(21, 0), location: '○○スポーツセンター', memo: '', presentCount: 6, absentCount: 1, maybeCount: 1, totalMembers: 10 },
-  { id: '8', group: 'トップ', date: makeDate(2026, 3, 29), title: '公式戦', opponent: '△△クラブ', startTime: makeTime(13, 0), endTime: makeTime(17, 0), location: '□□競技場', memo: 'ユニフォーム着用必須', presentCount: 8, absentCount: 0, maybeCount: 2, totalMembers: 10 },
-];
 
 interface NewSchedule {
   group: string;
@@ -67,6 +33,12 @@ function formatTime(d: Date) {
 
 type PickerMode = 'date' | 'startTime' | 'endTime' | null;
 
+function makeTime(h: number, min: number) {
+  const d = new Date();
+  d.setHours(h, min, 0, 0);
+  return d;
+}
+
 const makeEmptyForm = (firstCategory: string, firstGroup: string): NewSchedule => ({
   group: firstGroup, date: new Date(), title: firstCategory, opponent: '',
   startTime: makeTime(18, 0), endTime: makeTime(20, 0), location: '', memo: '',
@@ -74,8 +46,8 @@ const makeEmptyForm = (firstCategory: string, firstGroup: string): NewSchedule =
 
 export default function AdminScheduleScreen() {
   const { settings } = useTeam();
+  const { schedules, addSchedule, updateSchedule, deleteSchedule } = useSchedule();
   const [activeGroup, setActiveGroup] = useState('すべて');
-  const [schedules, setSchedules] = useState<ScheduleItem[]>(INITIAL_SCHEDULES);
   const [modalVisible, setModalVisible] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [pickerMode, setPickerMode] = useState<PickerMode>(null);
@@ -108,15 +80,9 @@ export default function AdminScheduleScreen() {
       return;
     }
     if (editingId) {
-      setSchedules(prev => prev.map(s =>
-        s.id === editingId ? { ...s, ...form } : s
-      ));
+      updateSchedule(editingId, form);
     } else {
-      const item: ScheduleItem = {
-        id: String(Date.now()), ...form,
-        presentCount: 0, absentCount: 0, maybeCount: 0, totalMembers: 0,
-      };
-      setSchedules(prev => [...prev, item]);
+      addSchedule(form);
     }
     setModalVisible(false);
   };
@@ -124,7 +90,7 @@ export default function AdminScheduleScreen() {
   const handleDelete = (id: string) => {
     Alert.alert('削除確認', 'このスケジュールを削除しますか？', [
       { text: 'キャンセル', style: 'cancel' },
-      { text: '削除', style: 'destructive', onPress: () => setSchedules(prev => prev.filter(s => s.id !== id)) },
+      { text: '削除', style: 'destructive', onPress: () => deleteSchedule(id) },
     ]);
   };
 

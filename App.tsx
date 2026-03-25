@@ -9,6 +9,7 @@ import { AuthProvider, useAuth } from './src/context/AuthContext';
 import { DocumentProvider } from './src/context/DocumentContext';
 import { TeamProvider, useTeam } from './src/context/TeamContext';
 import { MemberProfileProvider } from './src/context/MemberProfileContext';
+import { ScheduleProvider } from './src/context/ScheduleContext';
 import LoginScreen from './src/screens/auth/LoginScreen';
 import SignUpScreen from './src/screens/auth/SignUpScreen';
 import PaymentSetupScreen from './src/screens/auth/PaymentSetupScreen';
@@ -130,16 +131,18 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <TeamProvider>
-        <MemberProfileProvider>
-          <AuthProvider>
-            <DocumentProvider>
-              <NavigationContainer>
-                <StatusBar style="light" />
-                <AppNavigator />
-              </NavigationContainer>
-            </DocumentProvider>
-          </AuthProvider>
-        </MemberProfileProvider>
+        <ScheduleProvider>
+          <MemberProfileProvider>
+            <AuthProvider>
+              <DocumentProvider>
+                <NavigationContainer>
+                  <StatusBar style="light" />
+                  <AppNavigator />
+                </NavigationContainer>
+              </DocumentProvider>
+            </AuthProvider>
+          </MemberProfileProvider>
+        </ScheduleProvider>
       </TeamProvider>
     </SafeAreaProvider>
   );

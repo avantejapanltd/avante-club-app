@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../context/AuthContext';
 import { useTeam } from '../context/TeamContext';
+import { useSchedule } from '../context/ScheduleContext';
 
 const BG = '#F5F7FA';
 const SURFACE = '#FFFFFF';
@@ -15,11 +16,30 @@ interface Props {
   onLogin?: () => void;
 }
 
+function formatDate(d: Date) {
+  return `${d.getMonth() + 1}月${d.getDate()}日(${['日','月','火','水','木','金','土'][d.getDay()]})`;
+}
+function formatTime(d: Date) {
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+}
+
 export default function HomeScreen({ onSignUp, onLogin }: Props) {
   const { user, logout } = useAuth();
   const { settings } = useTeam();
+  const { schedules } = useSchedule();
   const today = new Date();
   const dateStr = `${today.getFullYear()}年${today.getMonth() + 1}月${today.getDate()}日`;
+
+  // 今後のスケジュール（上位2件）
+  const upcoming = schedules
+    .filter(s => s.date >= today || s.date.toDateString() === today.toDateString())
+    .sort((a, b) => a.date.getTime() - b.date.getTime())
+    .slice(0, 2);
+
+  // 未回答数（totalMembers - 回答済み）
+  const unanswered = schedules.reduce((sum, s) => {
+    return sum + Math.max(0, s.totalMembers - s.presentCount - s.absentCount - s.maybeCount);
+  }, 0);
 
   const LogoMark = () => (
     <View style={[styles.logoMark, { backgroundColor: settings.accentColor }]}>
@@ -56,7 +76,6 @@ export default function HomeScreen({ onSignUp, onLogin }: Props) {
               <Text style={styles.loginLinkText}>ログインはこちら</Text>
             </TouchableOpacity>
           </View>
-
         </ScrollView>
       </SafeAreaView>
     );
@@ -82,15 +101,25 @@ export default function HomeScreen({ onSignUp, onLogin }: Props) {
           <Text style={styles.cardLabel}>お知らせ</Text>
           <Text style={styles.cardBody}>今月の月謝引き落とし日: 27日</Text>
         </View>
+
         <View style={styles.card}>
           <Text style={styles.cardLabel}>直近のスケジュール</Text>
-          <Text style={styles.cardBody}>3月25日(火) 練習 18:00〜20:00</Text>
-          <Text style={styles.cardBody}>3月29日(土) 試合 10:00〜</Text>
+          {upcoming.length === 0 ? (
+            <Text style={styles.cardBody}>予定はありません</Text>
+          ) : (
+            upcoming.map(s => (
+              <Text key={s.id} style={styles.cardBody}>
+                {formatDate(s.date)} {s.title}{s.opponent ? ` vs ${s.opponent}` : ''} {formatTime(s.startTime)}〜
+              </Text>
+            ))
+          )}
         </View>
-        <View style={[styles.card, styles.cardAccent]}>
+
+        <View style={styles.card}>
           <Text style={styles.cardLabel}>未回答の出欠</Text>
-          <Text style={styles.accentNum}>2<Text style={styles.accentUnit}> 件</Text></Text>
+          <Text style={styles.accentNum}>{unanswered}<Text style={styles.accentUnit}> 件</Text></Text>
         </View>
+
         {user.paymentMethod && (
           <View style={styles.card}>
             <Text style={styles.cardLabel}>決済方法</Text>
@@ -135,18 +164,10 @@ const styles = StyleSheet.create({
   signUpBtnText: { color: '#FFFFFF', fontSize: 14, fontWeight: '800', letterSpacing: 1 },
   loginLinkBtn: { alignItems: 'center', marginTop: 16 },
   loginLinkText: { color: 'rgba(255,255,255,0.6)', fontSize: 13, letterSpacing: 0.5 },
-  featuresRow: { flexDirection: 'row', gap: 8 },
-  featureBox: {
-    flex: 1, backgroundColor: SURFACE, borderRadius: 4, padding: 14,
-    alignItems: 'center', gap: 10, borderWidth: 1, borderColor: BORDER,
-  },
-  featureSym: { fontSize: 18, color: TEXT, fontWeight: '700' },
-  featureLabel: { fontSize: 10, color: TEXT2, textAlign: 'center', lineHeight: 15, letterSpacing: 0.3 },
   card: {
     backgroundColor: SURFACE, borderRadius: 4, padding: 20,
     borderWidth: 1, borderColor: BORDER,
   },
-  cardAccent: { borderColor: BORDER },
   cardLabel: { fontSize: 10, fontWeight: '700', color: TEXT2, marginBottom: 10, letterSpacing: 2 },
   cardBody: { fontSize: 14, color: TEXT, marginBottom: 4, letterSpacing: 0.3 },
   accentNum: { fontSize: 40, fontWeight: '800', color: '#1A3C5E', letterSpacing: -1 },
