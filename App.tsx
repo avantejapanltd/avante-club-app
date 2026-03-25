@@ -35,7 +35,7 @@ const TAB_ICONS: Record<string, string> = {
   ショップ: '◇',
   経費精算: '△',
   管理シート: '⊞',
-  月謝管理: '¥',
+  引落結果照会: '¥',
   設定: '⚙',
 };
 
@@ -95,8 +95,8 @@ function ManagerTabs() {
     <Tab.Navigator screenOptions={makeTabOptions(settings.primaryColor)}>
       <Tab.Screen name="ホーム" component={HomeScreen} />
       <Tab.Screen name="経費精算" component={ExpenseScreen} />
+      <Tab.Screen name="引落結果照会" component={AdminPaymentScreen} />
       <Tab.Screen name="管理シート" component={ManagerSheetsScreen} />
-      <Tab.Screen name="月謝管理" component={AdminPaymentScreen} />
       <Tab.Screen name="書類" component={AdminDocumentScreen} />
       <Tab.Screen name="設定" component={TeamSettingsScreen} />
     </Tab.Navigator>
