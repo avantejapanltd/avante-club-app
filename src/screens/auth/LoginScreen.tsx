@@ -120,7 +120,7 @@ export default function LoginScreen({ onSignUp }: Props) {
                 style={[styles.tabBtn, tab === t && styles.tabBtnActive]}
                 onPress={() => switchTab(t)}>
                 <Text style={[styles.tabText, tab === t && styles.tabTextActive]}>
-                  {t === 'member' ? '会員' : t === 'coach' ? '指導者' : '管理者'}
+                  {t === 'member' ? '選手' : t === 'coach' ? '指導者' : '管理者'}
                 </Text>
               </TouchableOpacity>
             ))}

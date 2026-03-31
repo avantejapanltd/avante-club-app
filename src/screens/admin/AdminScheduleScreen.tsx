@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
-  TouchableOpacity, Alert, Modal, TextInput, Platform,
+  TouchableOpacity, Alert, Modal, TextInput, Platform, Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTeam } from '../../context/TeamContext';
 import { useSchedule, ScheduleItem, AttendanceResponse } from '../../context/ScheduleContext';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import * as DocumentPicker from 'expo-document-picker';
 
 const BRAND_COLOR = '#1A3C5E';
 const ACCENT_COLOR = '#E8A020';
@@ -33,6 +34,8 @@ interface NewSchedule {
   endTime: Date;
   location: string;
   memo: string;
+  fileUri: string | null;
+  fileName: string | null;
 }
 
 function formatDate(d: Date) {
@@ -53,6 +56,7 @@ function makeTime(h: number, min: number) {
 const makeEmptyForm = (firstCategory: string, firstGroup: string): NewSchedule => ({
   group: firstGroup, date: new Date(), title: firstCategory, opponent: '',
   startTime: makeTime(18, 0), endTime: makeTime(20, 0), location: '', memo: '',
+  fileUri: null, fileName: null,
 });
 
 // ユーザーバッジ（名前の頭文字＋ステータスカラー）
@@ -91,6 +95,7 @@ export default function AdminScheduleScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [pickerMode, setPickerMode] = useState<PickerMode>(null);
+  const [formError, setFormError] = useState('');
   const scheduleGroups = settings.scheduleGroups ?? [];
   const scheduleCategories = settings.scheduleCategories ?? [];
   const [form, setForm] = useState<NewSchedule>(() => makeEmptyForm(scheduleCategories[0] ?? '練習', scheduleGroups[0] ?? ''));
@@ -101,24 +106,47 @@ export default function AdminScheduleScreen() {
 
   const openAdd = () => {
     setEditingId(null);
+    setFormError('');
     setForm(makeEmptyForm(scheduleCategories[0] ?? '練習', scheduleGroups[0] ?? ''));
     setModalVisible(true);
   };
 
   const openEdit = (item: ScheduleItem) => {
+    setFormError('');
     setEditingId(item.id);
     setForm({
       group: item.group, date: item.date, title: item.title, opponent: item.opponent,
       startTime: item.startTime, endTime: item.endTime, location: item.location, memo: item.memo,
+      fileUri: item.fileUri, fileName: item.fileName,
     });
     setModalVisible(true);
   };
 
+  const handlePickFile = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ['application/pdf', 'image/*'],
+        copyToCacheDirectory: true,
+      });
+      if (!result.canceled && result.assets[0]) {
+        const asset = result.assets[0];
+        setForm(p => ({ ...p, fileUri: asset.uri, fileName: asset.name ?? 'ファイル' }));
+      }
+    } catch {
+      Alert.alert('エラー', 'ファイルの選択に失敗しました');
+    }
+  };
+
   const handleSubmit = () => {
-    if (!form.location) {
-      Alert.alert('入力エラー', '場所を入力してください');
+    if (!form.location.trim()) {
+      setFormError('場所を入力してください');
       return;
     }
+    if (!form.group) {
+      setFormError('グループを選択してください');
+      return;
+    }
+    setFormError('');
     if (editingId) {
       updateSchedule(editingId, form);
     } else {
@@ -180,6 +208,11 @@ export default function AdminScheduleScreen() {
               <View style={styles.memoBox}>
                 <Text style={styles.memoText}>📝 {item.memo}</Text>
               </View>
+            )}
+            {item.fileUri && (
+              <TouchableOpacity style={styles.fileChip} onPress={() => Linking.openURL(item.fileUri!)}>
+                <Text style={styles.fileChipText}>📄 {item.fileName ?? 'ファイル'}</Text>
+              </TouchableOpacity>
             )}
 
             {(() => {
@@ -365,6 +398,24 @@ export default function AdminScheduleScreen() {
               multiline
               numberOfLines={3} />
 
+            {/* 試合要項PDF */}
+            <Text style={styles.label}>試合要項・添付ファイル</Text>
+            <TouchableOpacity style={styles.filePickerBtn} onPress={handlePickFile}>
+              {form.fileUri ? (
+                <Text style={styles.filePickerSelected}>📄 {form.fileName}</Text>
+              ) : (
+                <Text style={styles.filePickerPlaceholder}>📎 PDFまたは画像を選択</Text>
+              )}
+            </TouchableOpacity>
+            {form.fileUri && (
+              <TouchableOpacity onPress={() => setForm(p => ({ ...p, fileUri: null, fileName: null }))}>
+                <Text style={styles.fileRemove}>添付を削除</Text>
+              </TouchableOpacity>
+            )}
+
+            {formError !== '' && (
+              <Text style={styles.formError}>{formError}</Text>
+            )}
             <TouchableOpacity style={[styles.submitBtn, { backgroundColor: settings.primaryColor }]} onPress={handleSubmit}>
               <Text style={styles.submitBtnText}>{editingId ? '変更を保存する' : '追加する'}</Text>
             </TouchableOpacity>
@@ -480,4 +531,19 @@ const styles = StyleSheet.create({
   memoInput: { height: 80, textAlignVertical: 'top' },
   submitBtn: { backgroundColor: BRAND_COLOR, borderRadius: 12, paddingVertical: 16, alignItems: 'center', marginTop: 16 },
   submitBtnText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  fileChip: {
+    flexDirection: 'row', alignSelf: 'flex-start',
+    backgroundColor: '#EEF3F9', borderRadius: 6,
+    paddingHorizontal: 10, paddingVertical: 5,
+    borderWidth: 1, borderColor: '#C8D8EC', marginTop: 6,
+  },
+  fileChipText: { fontSize: 12, color: '#1A3C5E', fontWeight: '600' },
+  filePickerBtn: {
+    backgroundColor: '#fff', borderRadius: 10, borderWidth: 2,
+    borderColor: '#DDE2E8', borderStyle: 'dashed', paddingVertical: 16, alignItems: 'center',
+  },
+  filePickerSelected: { fontSize: 14, color: '#28A745', fontWeight: '600' },
+  filePickerPlaceholder: { fontSize: 14, color: '#aaa' },
+  fileRemove: { fontSize: 12, color: '#DC3545', textAlign: 'right', marginTop: 4 },
+  formError: { fontSize: 13, color: '#DC3545', fontWeight: '600', textAlign: 'center', marginTop: 8 },
 });

@@ -14,6 +14,8 @@ export interface ScheduleItem {
   absentCount: number;
   maybeCount: number;
   totalMembers: number;
+  fileUri: string | null;
+  fileName: string | null;
 }
 
 export type AttendanceStatus = 'present' | 'absent' | 'maybe';
@@ -63,14 +65,14 @@ function makeTime(h: number, min: number) {
 }
 
 const INITIAL_SCHEDULES: ScheduleItem[] = [
-  { id: '1', group: '1年園児', date: makeDate(2026, 3, 25), title: '練習', opponent: '', startTime: makeTime(15, 0), endTime: makeTime(16, 0), location: '○○体育館', memo: '', presentCount: 8, absentCount: 2, maybeCount: 1, totalMembers: 12 },
-  { id: '2', group: '2年', date: makeDate(2026, 3, 25), title: '練習', opponent: '', startTime: makeTime(16, 0), endTime: makeTime(17, 30), location: '○○体育館', memo: '', presentCount: 10, absentCount: 1, maybeCount: 2, totalMembers: 15 },
-  { id: '3', group: '3年', date: makeDate(2026, 3, 25), title: '練習', opponent: '', startTime: makeTime(17, 30), endTime: makeTime(19, 0), location: '○○スポーツセンター', memo: '', presentCount: 7, absentCount: 3, maybeCount: 0, totalMembers: 14 },
-  { id: '4', group: '3年', date: makeDate(2026, 3, 29), title: '公式戦', opponent: '○○FC', startTime: makeTime(10, 0), endTime: makeTime(15, 0), location: '△△グラウンド', memo: '雨天中止の場合は前日連絡', presentCount: 5, absentCount: 2, maybeCount: 7, totalMembers: 14 },
-  { id: '5', group: '4年', date: makeDate(2026, 3, 26), title: '練習', opponent: '', startTime: makeTime(17, 30), endTime: makeTime(19, 0), location: '○○スポーツセンター', memo: '', presentCount: 9, absentCount: 0, maybeCount: 3, totalMembers: 13 },
-  { id: '6', group: 'サテライト', date: makeDate(2026, 3, 27), title: '練習', opponent: '', startTime: makeTime(18, 0), endTime: makeTime(20, 0), location: '△△アリーナ', memo: '', presentCount: 12, absentCount: 2, maybeCount: 1, totalMembers: 16 },
-  { id: '7', group: 'トップ', date: makeDate(2026, 3, 25), title: '練習', opponent: '', startTime: makeTime(19, 0), endTime: makeTime(21, 0), location: '○○スポーツセンター', memo: '', presentCount: 7, absentCount: 1, maybeCount: 2, totalMembers: 10 },
-  { id: '8', group: 'トップ', date: makeDate(2026, 3, 29), title: '公式戦', opponent: '△△クラブ', startTime: makeTime(13, 0), endTime: makeTime(17, 0), location: '□□競技場', memo: 'ユニフォーム着用必須', presentCount: 6, absentCount: 1, maybeCount: 3, totalMembers: 10 },
+  { id: '1', group: '1年園児', date: makeDate(2026, 3, 25), title: '練習', opponent: '', startTime: makeTime(15, 0), endTime: makeTime(16, 0), location: '○○体育館', memo: '', presentCount: 8, absentCount: 2, maybeCount: 1, totalMembers: 12, fileUri: null, fileName: null },
+  { id: '2', group: '2年', date: makeDate(2026, 3, 25), title: '練習', opponent: '', startTime: makeTime(16, 0), endTime: makeTime(17, 30), location: '○○体育館', memo: '', presentCount: 10, absentCount: 1, maybeCount: 2, totalMembers: 15, fileUri: null, fileName: null },
+  { id: '3', group: '3年', date: makeDate(2026, 3, 25), title: '練習', opponent: '', startTime: makeTime(17, 30), endTime: makeTime(19, 0), location: '○○スポーツセンター', memo: '', presentCount: 7, absentCount: 3, maybeCount: 0, totalMembers: 14, fileUri: null, fileName: null },
+  { id: '4', group: '3年', date: makeDate(2026, 3, 29), title: '公式戦', opponent: '○○FC', startTime: makeTime(10, 0), endTime: makeTime(15, 0), location: '△△グラウンド', memo: '雨天中止の場合は前日連絡', presentCount: 5, absentCount: 2, maybeCount: 7, totalMembers: 14, fileUri: null, fileName: null },
+  { id: '5', group: '4年', date: makeDate(2026, 3, 26), title: '練習', opponent: '', startTime: makeTime(17, 30), endTime: makeTime(19, 0), location: '○○スポーツセンター', memo: '', presentCount: 9, absentCount: 0, maybeCount: 3, totalMembers: 13, fileUri: null, fileName: null },
+  { id: '6', group: 'サテライト', date: makeDate(2026, 3, 27), title: '練習', opponent: '', startTime: makeTime(18, 0), endTime: makeTime(20, 0), location: '△△アリーナ', memo: '', presentCount: 12, absentCount: 2, maybeCount: 1, totalMembers: 16, fileUri: null, fileName: null },
+  { id: '7', group: 'トップ', date: makeDate(2026, 3, 25), title: '練習', opponent: '', startTime: makeTime(19, 0), endTime: makeTime(21, 0), location: '○○スポーツセンター', memo: '', presentCount: 7, absentCount: 1, maybeCount: 2, totalMembers: 10, fileUri: null, fileName: null },
+  { id: '8', group: 'トップ', date: makeDate(2026, 3, 29), title: '公式戦', opponent: '△△クラブ', startTime: makeTime(13, 0), endTime: makeTime(17, 0), location: '□□競技場', memo: 'ユニフォーム着用必須', presentCount: 6, absentCount: 1, maybeCount: 3, totalMembers: 10, fileUri: null, fileName: null },
 ];
 
 // ─────────────────────────────────────────────────────────────

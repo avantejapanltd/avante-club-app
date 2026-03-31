@@ -1,5 +1,5 @@
 {
-  "buildCommand": "npx expo export --platform web",
+  "buildCommand": "npx expo export --platform web && cp "01_営業・LP/lp.html" dist/lp.html",
   "outputDirectory": "dist",
   "installCommand": "npm install",
   "framework": null

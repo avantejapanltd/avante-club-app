@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
-  TouchableOpacity, TextInput, Alert, Platform,
+  TouchableOpacity, TextInput, Alert, Platform, Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../context/AuthContext';
@@ -217,6 +217,11 @@ export default function ScheduleScreen() {
                 <Text style={styles.detail}>{formatTime(item.startTime)}〜{formatTime(item.endTime)}</Text>
                 <Text style={styles.detail}>{item.location}</Text>
                 {item.memo !== '' && <Text style={styles.memo}>📝 {item.memo}</Text>}
+                {item.fileUri && (
+                  <TouchableOpacity style={styles.fileChip} onPress={() => Linking.openURL(item.fileUri!)}>
+                    <Text style={styles.fileChipText}>📄 {item.fileName ?? '試合要項'} を開く</Text>
+                  </TouchableOpacity>
+                )}
 
                 {/* Attendance */}
                 {attendance === null ? (
@@ -290,8 +295,8 @@ export default function ScheduleScreen() {
                   </View>
                 )}
 
-                {/* Transport section — only when attending */}
-                {attendance === 'present' && (
+                {/* Transport section — only when attending and not 練習 */}
+                {attendance === 'present' && item.title !== '練習' && (
                   <View style={styles.transportSection}>
                     <View style={styles.transportHeader}>
                       <Text style={styles.transportTitle}>移動手段</Text>
@@ -494,6 +499,13 @@ const styles = StyleSheet.create({
   title: { fontSize: 18, fontWeight: '700', color: TEXT, marginBottom: 6, letterSpacing: 0.3 },
   detail: { fontSize: 12, color: TEXT2, marginBottom: 2, letterSpacing: 0.5 },
   memo: { fontSize: 12, color: '#888', marginTop: 4, lineHeight: 18 },
+  fileChip: {
+    flexDirection: 'row', alignSelf: 'flex-start',
+    backgroundColor: '#EEF3F9', borderRadius: 6,
+    paddingHorizontal: 10, paddingVertical: 6,
+    borderWidth: 1, borderColor: '#C8D8EC', marginTop: 8,
+  },
+  fileChipText: { fontSize: 12, color: '#1A3C5E', fontWeight: '600' },
   badge: { borderRadius: 4, paddingHorizontal: 10, paddingVertical: 3, borderWidth: 1 },
   badgeText: { fontSize: 11, fontWeight: '700', letterSpacing: 0.5 },
   buttons: { flexDirection: 'row', gap: 8, marginTop: 14 },

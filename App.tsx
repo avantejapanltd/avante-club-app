@@ -92,7 +92,6 @@ function ManagerTabs() {
   const { settings } = useTeam();
   return (
     <Tab.Navigator screenOptions={makeTabOptions(settings.primaryColor)}>
-      <Tab.Screen name="ホーム" component={HomeScreen} />
       <Tab.Screen name="経費精算" component={ExpenseScreen} />
       <Tab.Screen name="引落結果照会" component={AdminPaymentScreen} />
       <Tab.Screen name="管理シート" component={ManagerSheetsScreen} />
