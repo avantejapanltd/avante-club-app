@@ -543,6 +543,25 @@
     }
     .btn-navy:hover { background: #0D2035; transform: translateY(-2px); box-shadow: 0 10px 28px rgba(0,0,0,.22); }
 
+    .cta-qr {
+      margin-top: 44px; padding-top: 36px;
+      border-top: 1px solid rgba(8,21,36,.1);
+      display: flex; flex-direction: column; align-items: center; gap: 14px;
+    }
+    .cta-qr img {
+      width: 160px; height: 160px;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,.1);
+      background: #fff; padding: 8px;
+    }
+    .cta-qr-label {
+      font-size: 13px; font-weight: 600; color: var(--navy-deeper);
+      letter-spacing: .5px;
+    }
+    .cta-qr-sub {
+      font-size: 11px; color: rgba(8,21,36,.4); margin-top: -6px;
+    }
+
     /* ==============================
        FOOTER
     ============================== */
@@ -1010,6 +1029,11 @@
         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
         <a href="https://club-app.jp/partner">club-app.jp/partner</a>
       </div>
+    </div>
+    <div class="cta-qr">
+      <div class="cta-qr-label">スマホでかんたんアクセス</div>
+      <img src="/qr-code.png" alt="CLUB APP QRコード" />
+      <div class="cta-qr-sub">QRコードを読み取ってアプリを開く</div>
     </div>
   </div>
 </section>
